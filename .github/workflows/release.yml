@@ -17,3 +17,26 @@ jobs:
         with:
           image_name: ${{ github.repository }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+      # Step that creates a docker container from the image
+      # to extract the binary and upload it as a release asset
+      - name: Extract binary from Docker image
+        run: |
+          docker create --name extract ${{ github.repository }}
+          docker cp extract:/usr/bin/caddy .
+          docker rm -f extract
+      - uses: rickstaa/action-create-tag@v1
+        with:
+          tag: "latest"
+          force_push_tag: true
+          message: "Latest release"
+      # Create a release and upload the binary as an asset
+      # Override the existing release if it already exists
+      - name: Publish the binary
+        uses: softprops/action-gh-release@v1
+        with:
+          files: caddy
+          tag_name: latest
+          release_name: Caddy cloudflare s3
+          body: "Caddy with cloudflare and s3 plugins"
+          draft: false
+          prerelease: false
